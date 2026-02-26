@@ -63,18 +63,36 @@ struct BridgeSceneView: View {
     private var backgroundLayer: some View {
         Group {
             if didChooseCorridor {
+                // Background for Corridor Path
                 Image(isPlaced ? "Scene1Base" : "ConstructionSpedUpBG")
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
                     .opacity(isPlaced ? 1.0 : 0.6)
             } else {
-                ZStack {
-                    Image("Road_Phase1").resizable().scaledToFill()
-                    Image("Road_Phase2").resizable().scaledToFill()
-                        .opacity(max(0, min(1, (sliderValue - 20) / 40)))
-                    Image("Road_Phase3").resizable().scaledToFill()
-                        .opacity(max(0, min(1, (sliderValue - 60) / 40)))
+                // Background for Road Path (Fixed to fill screen)
+                GeometryReader { geo in
+                    ZStack {
+                        Image("Road_Phase1")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: geo.size.width, height: geo.size.height)
+                            .clipped()
+                        
+                        Image("Road_Phase2")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: geo.size.width, height: geo.size.height)
+                            .clipped()
+                            .opacity(max(0, min(1, (sliderValue - 20) / 40)))
+                        
+                        Image("Road_Phase3")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: geo.size.width, height: geo.size.height)
+                            .clipped()
+                            .opacity(max(0, min(1, (sliderValue - 60) / 40)))
+                    }
                 }
                 .ignoresSafeArea()
             }
@@ -141,62 +159,6 @@ struct BridgeSceneView: View {
 
     // MARK: - Drag & Drop Logic
     
-    // MARK: - Drag & Drop Logic
-        
-//        private var corridorDragLogic: some View {
-//            ZStack {
-//                // 1. THE DOCK (Source Box)
-//                RoundedRectangle(cornerRadius: 15)
-//                    .stroke(Color.orange, lineWidth: 3)
-//                    // FIX: Apply the color TO the shape so the corners match perfectly
-//                    .background(RoundedRectangle(cornerRadius: 15).fill(Color.black.opacity(0.4)))
-//                    .frame(width: 180, height: 120)
-//                    // Positioned with your requested +350 shift
-//                    .position(x: UIScreen.main.bounds.width - 120, y: (UIScreen.main.bounds.height / 2) + 350)
-//                    .overlay(
-//                        Text("BRIDGE DOCK")
-//                            .font(.caption.bold())
-//                            .foregroundColor(.orange)
-//                            // Adjusted Y to follow the box's new position
-//                            .position(x: UIScreen.main.bounds.width - 120, y: (UIScreen.main.bounds.height / 2) + 275)
-//                    )
-//
-//                // 2. THE GHOST TARGET
-//                if !isPlaced {
-//                    Image("bridge")
-//                        .resizable()
-//                        .scaledToFit()
-//                        .frame(width: 1200)
-//                        .opacity(0.2)
-//                        .offset(targetLocation)
-//                }
-//
-//                // 3. THE ACTUAL BRIDGE
-//                Image("bridge")
-//                    .resizable()
-//                    .scaledToFit()
-//                    .frame(width: (isDragging || isPlaced) ? 1200 : 150)
-//                    .shadow(color: .black.opacity(isPlaced ? 0 : 0.6), radius: 10)
-//                    .offset(dragOffset)
-//                    .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isDragging)
-//                    .gesture(
-//                        DragGesture()
-//                            .onChanged { value in
-//                                if !isPlaced {
-//                                    isDragging = true
-//                                    self.dragOffset = CGSize(
-//                                        width: value.location.x - (UIScreen.main.bounds.width / 2),
-//                                        height: value.location.y - (UIScreen.main.bounds.height / 2)
-//                                    )
-//                                }
-//                            }
-//                            .onEnded { _ in
-//                                isDragging = false
-//                                checkPlacement()
-//                            }
-//                    )
-//            }
-//    }
     private var corridorDragLogic: some View {
         ZStack {
             // 1. THE DOCK (Source Box)
@@ -228,17 +190,13 @@ struct BridgeSceneView: View {
                 .scaledToFit()
                 .frame(width: (isDragging || isPlaced) ? 1200 : 150)
                 .shadow(color: .black.opacity(isPlaced ? 0 : 0.6), radius: 10)
-                .offset(dragOffset) // This uses the dragOffset variable
+                .offset(dragOffset)
                 .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isDragging)
                 .gesture(
                     DragGesture()
                         .onChanged { value in
                             if !isPlaced {
                                 isDragging = true
-                                
-                                // ADJUSTMENT: Instead of screen center, we track
-                                // the movement (translation) starting from the dock position.
-                                // Start X: 455, Start Y: 385
                                 self.dragOffset = CGSize(
                                     width: -455 + value.translation.width,
                                     height: 385 + value.translation.height
@@ -253,43 +211,22 @@ struct BridgeSceneView: View {
         }
     }
     
-//    private func checkPlacement() {
-//        let xDist = abs(dragOffset.width - targetLocation.width)
-//        let yDist = abs(dragOffset.height - targetLocation.height)
-//
-//        if xDist < snapTolerance && yDist < snapTolerance {
-//            withAnimation(.spring()) {
-//                dragOffset = targetLocation
-//                isPlaced = true
-//            }
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-//                withAnimation { showNextButton = true }
-//            }
-//        } else {
-//            // Return to Dock on miss
-//            withAnimation(.spring()) {
-//                dragOffset = CGSize(width: 320, height: 0)
-//            }
-//        }
-//    }
     private func checkPlacement() {
-            let xDist = abs(dragOffset.width - targetLocation.width)
-            let yDist = abs(dragOffset.height - targetLocation.height)
-            
-            if xDist < snapTolerance && yDist < snapTolerance {
-                withAnimation(.spring()) {
-                    dragOffset = targetLocation
-                    isPlaced = true
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                    withAnimation { showNextButton = true }
-                }
-            } else {
-                // FIX: Return to the exact Dock coordinates on miss
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                    // This matches the @State dragOffset you declared at the top
-                    dragOffset = CGSize(width: 455, height: 385)
-                }
+        let xDist = abs(dragOffset.width - targetLocation.width)
+        let yDist = abs(dragOffset.height - targetLocation.height)
+        
+        if xDist < snapTolerance && yDist < snapTolerance {
+            withAnimation(.spring()) {
+                dragOffset = targetLocation
+                isPlaced = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                withAnimation { showNextButton = true }
+            }
+        } else {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                dragOffset = CGSize(width: 455, height: 385)
             }
         }
+    }
 }

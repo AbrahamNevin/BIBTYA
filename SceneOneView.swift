@@ -12,6 +12,7 @@ struct SceneOneView: View {
     @State private var showContinueButton = false
     @State private var goToNextScene = false
     @State private var builtBridge = false
+    @State private var goToSceneOne = false // NEW: State for navigation
     
     let biptyaColor = Color(red: 181/255, green: 103/255, blue: 13/255)
     
