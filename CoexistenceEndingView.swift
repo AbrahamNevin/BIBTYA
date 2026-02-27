@@ -15,16 +15,14 @@ struct CrossingData: Identifiable {
 }
 
 struct CoexistenceEndingView: View {
-    // --- CHOICE TRACKING ---
-    // Set this to true if Build Corridor -> Use Corridor was chosen.
-    // Otherwise, Flow2 will be shown.
     var didBuildAndUseCorridor: Bool = true
     var useLivingCorridorPath: Bool
     
     @State private var stage: Int = 0
     @State private var showLine1 = false
     @State private var showLine2 = false
-    @State private var showLine3 = false
+    @State private var showFinalVStack = false
+    @State private var overlayOpacity: Double = 0.0 // Starts at 0 for the 10-second "clear" view
     @State private var goToSceneOne = false
     
     let mortalityData: [LeopardData] = [
@@ -60,19 +58,19 @@ struct CoexistenceEndingView: View {
                                 .overlay(Color.black.opacity(0.5))
                                 .transition(.opacity)
                         } else if stage == 4 {
-                            // Stage 4: Switches background based on user choice
                             Image(useLivingCorridorPath ? "Flow1" : "Flow2")
-                                        .resizable()
-                                        .scaledToFill()
+                                .resizable()
+                                .scaledToFill()
                                 .frame(width: geometry.size.width, height: geometry.size.height)
                                 .clipped()
                                 .ignoresSafeArea()
-                                .overlay(Color.black.opacity(0.6))
+                                // The overlay that darkens the image for text readability
+                                .overlay(Color.black.opacity(overlayOpacity))
                                 .transition(.opacity)
                         }
                     }
                     
-                    // --- OVERLAY CONTENT (Text & Button) ---
+                    // --- OVERLAY CONTENT ---
                     VStack {
                         if stage == 1 {
                             Spacer()
@@ -82,10 +80,7 @@ struct CoexistenceEndingView: View {
                                 .multilineTextAlignment(.center)
                                 .foregroundColor(.white)
                                 .padding(40)
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .bottom).combined(with: .opacity),
-                                    removal: .opacity
-                                ))
+                                .transition(.opacity)
                             Spacer()
                         }
                         
@@ -103,15 +98,12 @@ struct CoexistenceEndingView: View {
                                         .transition(.move(edge: .bottom).combined(with: .opacity))
                                 }
                                 
-                                if showLine3 {
+                                if showFinalVStack {
                                     VStack(spacing: 40) {
                                         Text("“Coexistence is not an idea. It is infrastructure.”")
                                             .fontWeight(.black)
                                         
-                                        // PLAY AGAIN BUTTON - Centered on top of Flow1/Flow2
-                                        Button(action: {
-                                            goToSceneOne = true
-                                        }) {
+                                        Button(action: { goToSceneOne = true }) {
                                             HStack {
                                                 Image(systemName: "arrow.counterclockwise")
                                                 Text("Play Again")
@@ -135,13 +127,12 @@ struct CoexistenceEndingView: View {
                         }
                     }
                     
-                    // --- DATA VISUALIZATION (Stage 2 & 3) ---
+                    // --- DATA VISUALIZATION ---
                     VStack(spacing: 30) {
                         if stage == 2 {
                             chartContainer(title: "Leopard Mortality (Before vs After Mitigation)", data: mortalityChart)
                                 .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .opacity))
                         }
-                        
                         if stage == 3 {
                             chartContainer(title: "Wildlife Crossings Per Month (Line Trend)", data: crossingChart)
                                 .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .opacity))
@@ -149,7 +140,6 @@ struct CoexistenceEndingView: View {
                     }
                     .padding()
 
-                    // --- INITIAL TITLE CARD ---
                     if stage == 0 {
                         ZStack {
                             Color.black.ignoresSafeArea()
@@ -163,6 +153,7 @@ struct CoexistenceEndingView: View {
                 }
             }
             .onAppear {
+                AudioManager.shared.playBackgroundMusic(fileName: "natureMusic", loops: -1)
                 runEndingSequence()
             }
             .navigationDestination(isPresented: $goToSceneOne) {
@@ -172,66 +163,58 @@ struct CoexistenceEndingView: View {
         }
     }
 
-    // --- Helper Components ---
     private func chartContainer<Content: View>(title: String, data: Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.headline)
-                .foregroundColor(.white)
-            data
-                .frame(height: 450)
+            Text(title).font(.headline).foregroundColor(.white)
+            data.frame(height: 450)
             Text("Data represents trends from the NH44 Wildlife Corridor.")
-                .font(.caption)
-                .foregroundColor(.white.opacity(0.6))
+                .font(.caption).foregroundColor(.white.opacity(0.6))
         }
-        .padding()
-        .background(Color.black.opacity(0.7).cornerRadius(15))
+        .padding().background(Color.black.opacity(0.7).cornerRadius(15))
     }
 
     private var mortalityChart: some View {
         Chart(mortalityData) { item in
             LineMark(x: .value("Year", item.year), y: .value("Deaths", item.deaths))
-                .interpolationMethod(.catmullRom)
-                .foregroundStyle(.orange)
-                .lineStyle(StrokeStyle(lineWidth: 3))
-            
+                .interpolationMethod(.catmullRom).foregroundStyle(.orange)
             PointMark(x: .value("Year", item.year), y: .value("Deaths", item.deaths))
-                .annotation(position: .top) {
-                    Text("\(item.deaths)").font(.caption2).foregroundColor(.white)
-                }
-        }
-        .chartXScale(domain: 2011...2021)
+                .annotation(position: .top) { Text("\(item.deaths)").font(.caption2).foregroundColor(.white) }
+        }.chartXScale(domain: 2011...2021)
     }
 
     private var crossingChart: some View {
         Chart(crossingData) { item in
             LineMark(x: .value("Year", String(item.year)), y: .value("Crossings", item.crossings))
-                .interpolationMethod(.catmullRom)
-                .foregroundStyle(Color.green.gradient)
-                .lineStyle(StrokeStyle(lineWidth: 3))
-
+                .interpolationMethod(.catmullRom).foregroundStyle(Color.green.gradient)
             PointMark(x: .value("Year", String(item.year)), y: .value("Crossings", item.crossings))
-                .annotation(position: .top) {
-                    Text("\(item.crossings)").font(.caption2).foregroundColor(.white)
-                }
+                .annotation(position: .top) { Text("\(item.crossings)").font(.caption2).foregroundColor(.white) }
         }
     }
 
     func runEndingSequence() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            withAnimation(.easeInOut(duration: 1.5)) { stage = 1 }
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 8.0) {
-            withAnimation(.easeInOut) { stage = 2 }
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 13.5) {
-            withAnimation(.easeInOut) { stage = 3 }
-        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { withAnimation { stage = 1 } }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 8.0) { withAnimation { stage = 2 } }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 13.5) { withAnimation { stage = 3 } }
+        
+        // --- STAGE 4 BEGINS ---
         DispatchQueue.main.asyncAfter(deadline: .now() + 19.0) {
-            withAnimation(.easeInOut) { stage = 4 }
-            withAnimation(.easeInOut(duration: 1.0).delay(0.5)) { showLine1 = true }
-            withAnimation(.easeInOut(duration: 1.0).delay(2.5)) { showLine2 = true }
-            withAnimation(.easeInOut(duration: 1.0).delay(4.5)) { showLine3 = true }
+            withAnimation(.easeInOut(duration: 1.0)) {
+                stage = 4
+                overlayOpacity = 0.0 // Image is shown clearly with NO overlay
+            }
+            
+            // WAIT 10 SECONDS BEFORE STARTING TEXT
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
+                // 1. Start darkening the background
+                withAnimation(.easeInOut(duration: 2.0)) {
+                    overlayOpacity = 0.6
+                }
+                
+                // 2. Cascade the text lines
+                withAnimation(.easeInOut(duration: 1.0).delay(0.5)) { showLine1 = true }
+                withAnimation(.easeInOut(duration: 1.0).delay(2.5)) { showLine2 = true }
+                withAnimation(.easeInOut(duration: 1.0).delay(4.5)) { showFinalVStack = true }
+            }
         }
     }
 }
