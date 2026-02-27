@@ -1,9 +1,3 @@
-//
-//  SceneTwoView.swift
-//  BIBTYA
-//
-//  Created by Nevin Abraham on 26/02/26.
-//
 import SwiftUI
 import SpriteKit
 
@@ -14,11 +8,7 @@ struct SceneTwoView: View {
     @State private var goToOutcome = false
     @State private var choseSafeCrossing = false
     @State private var goToFenceBuild = false
-    
-    // NEW: State for Escalation Ending Navigation
     @State private var goToEscalation = false
-    
-    // State for the Act Title Card
     @State private var showTitleCard = true
     
     var highwayGame: SKScene {
@@ -50,18 +40,21 @@ struct SceneTwoView: View {
                     Spacer()
                     
                     if showChoices {
-                        VStack(spacing: 20) {
+                        VStack(spacing: 30) {
                             Text("How should Biptya cross?")
-                                .font(.system(size: 40, weight: .bold, design: .serif))
+                                .font(.system(size: 34, weight: .bold, design: .serif))
                                 .foregroundColor(.white)
+                                .shadow(radius: 5)
                             
-                            HStack(spacing: 20) {
+                            HStack(spacing: 30) {
                                 Button(action: {
                                     choseSafeCrossing = true
                                     goToOutcome = true
                                 }) {
-                                    choiceButton(text: didChooseCorridor ? "USE CORRIDOR" : "LOCKED",
-                                                 color: didChooseCorridor ? .orange : .gray)
+                                    choiceButton(
+                                        text: didChooseCorridor ? "USE CORRIDOR" : "LOCKED",
+                                        color: didChooseCorridor ? .orange : .gray.opacity(0.5)
+                                    )
                                 }
                                 .disabled(!didChooseCorridor)
                                 
@@ -73,7 +66,7 @@ struct SceneTwoView: View {
                                 }
                             }
                         }
-                        .padding(.bottom, 200)
+                        .padding(.bottom, 120)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
@@ -84,7 +77,6 @@ struct SceneTwoView: View {
             if showTitleCard {
                 ZStack {
                     Color.black.ignoresSafeArea()
-                    
                     Text("ACT 2: The Crossing")
                         .font(.system(size: 35, weight: .black, design: .serif))
                         .tracking(4)
@@ -94,25 +86,17 @@ struct SceneTwoView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
-        
-        // --- Navigation Destinations ---
-        
         .navigationDestination(isPresented: $goToFenceBuild) {
             FencePlacementView()
         }
-        
-        // NEW: Destination for Escalation Ending
         .navigationDestination(isPresented: $goToEscalation) {
             EscalationEndingView(didSpeedUpConstruction: !didChooseCorridor)
         }
-        
         .onAppear {
-            // Act Title Sequence
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                 withAnimation(.easeInOut(duration: 1.5)) {
                     showTitleCard = false
                 }
-                
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     withAnimation {
                         showChoices = true
@@ -124,34 +108,31 @@ struct SceneTwoView: View {
             if choseSafeCrossing {
                 CorridorCrossingView()
             } else {
-                // The SpriteKit Game View
                 SpriteView(scene: highwayGame)
                     .ignoresSafeArea()
                     .navigationBarBackButtonHidden(true)
-                    
-                    // Listener for Building Fences (Success Path)
                     .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("GoToFenceBuild"))) { _ in
                         self.goToFenceBuild = true
                     }
-                    
-                    // NEW: Listener for Escalation (Failure/Ignore Path)
                     .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("GoToEscalationEnding"))) { _ in
-                        print("SwiftUI Received: Transition to Escalation Ending")
-                        // We don't need to change didChooseCorridor here,
-                        // it was already set when this view was loaded.
                         self.goToEscalation = true
                     }
             }
         }
     }
     
+    // Updated function to match SceneOneView's aesthetic
     func choiceButton(text: String, color: Color) -> some View {
         Text(text)
-            .font(.system(size: 20, weight: .bold))
-            .frame(width: 200, height: 80)
-            .background(color.opacity(0.85))
+            .font(.system(size: 18, weight: .bold))
             .foregroundColor(.white)
+            .multilineTextAlignment(.center)
+            .frame(width: 250, height: 80) // Standard size for consistency
+            .background(Color.black.opacity(0.8)) // Darker background for contrast
             .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(color, lineWidth: 2) // The signature outline
+            )
     }
 }
-
