@@ -14,7 +14,7 @@ class HighwayScene: SKScene, SKPhysicsContactDelegate {
     override func didMove(to view: SKView) {
         physicsWorld.contactDelegate = self
         physicsWorld.gravity = .zero
-        
+       // AudioManager.shared.playBackgroundMusic(fileName: "CarCrash")
         // 1. Setup Background
         let background = SKSpriteNode(imageNamed: "road_topview")
         background.position = CGPoint(x: frame.midX, y: frame.midY)

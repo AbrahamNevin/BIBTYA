@@ -5,7 +5,7 @@
 //  Created by Nevin Abraham on 26/02/26.
 //
 import SpriteKit
-
+import AVFoundation
 class InjuredScene: SKScene {
     var didChooseCorridor: Bool = false
     
@@ -16,9 +16,18 @@ class InjuredScene: SKScene {
         bgImage.position = CGPoint(x: frame.midX, y: frame.midY)
         bgImage.zPosition = 1
         addChild(bgImage)
+        
+        // 1. Force the audio session to stay active and ignore the silent switch
+            let session = AVAudioSession.sharedInstance()
+            try? session.setCategory(.playback, mode: .default, options: [])
+            try? session.setActive(true)
 
+        // 2. Stop construction and play crash
+        AudioManager.shared.stopMusic()
+        AudioManager.shared.playBackgroundMusic(fileName: "CarCrash", loops: 0)
+        
         let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        label.text = "BIPTYA IS INJURED"; label.fontSize = 50; label.fontColor = .red
+        label.text = "BIBTYA IS INJURED"; label.fontSize = 50; label.fontColor = .red
         label.position = CGPoint(x: frame.midX, y: frame.midY); label.zPosition = 2; label.alpha = 0
         addChild(label)
 

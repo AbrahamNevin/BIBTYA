@@ -163,31 +163,37 @@ struct CorridorCrossingView: View {
     
     // Automated crossing animation
     private func startCrossingAnimation() {
-        isCrossing = true
-        
-        // Walking tilt
-        withAnimation(.easeInOut(duration: 0.3).repeatForever(autoreverses: true)) {
-            autoRotation = 10.0
-        }
-        
-        // Snap to entrance center
-        withAnimation(.easeOut(duration: 0.4)) { biptyaOffset = bridgeEntrance }
-        
-        // Move across the screen
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            withAnimation(.linear(duration: 10.0)) {
-                biptyaOffset = CGSize(width: 850, height: -80)
+            isCrossing = true
+            
+            // 1. START THE FOOTSTEPS (Set loops to -1 so it repeats while walking)
+            AudioManager.shared.playBackgroundMusic(fileName: "FootStep", loops: -1)
+            
+            // Walking tilt
+            withAnimation(.easeInOut(duration: 0.3).repeatForever(autoreverses: true)) {
+                autoRotation = 10.0
+            }
+            
+            // Snap to entrance center
+            withAnimation(.easeOut(duration: 0.4)) { biptyaOffset = bridgeEntrance }
+            
+            // Move across the screen
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.linear(duration: 10.0)) {
+                    biptyaOffset = CGSize(width: 850, height: -80)
+                }
+            }
+            
+            // Finish sequence
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
+                // 2. STOP THE FOOTSTEPS when she reaches the other side
+                AudioManager.shared.stopMusic()
+                
+                withAnimation {
+                    hasFinishedCrossing = true
+                    autoRotation = 0
+                }
             }
         }
-        
-        // Finish sequence
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
-            withAnimation {
-                hasFinishedCrossing = true
-                autoRotation = 0
-            }
-        }
-    }
 }
 
 // Preview provider for testing

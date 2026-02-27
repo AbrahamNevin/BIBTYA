@@ -63,7 +63,11 @@ struct BridgeSceneView: View {
                 print("DEBUG: Audio path is \(path ?? "NOT FOUND")")
                 
                 AudioManager.shared.playBackgroundMusic(fileName: "ConstructionSound")
-            }            .navigationBarBackButtonHidden(true)
+            }.onDisappear {
+                AudioManager.shared.stopMusic()
+                print("DEBUG: Left BridgeSceneView, music stopped.")
+            }
+            .navigationBarBackButtonHidden(true)
             .navigationDestination(isPresented: $goToSceneTwo) {
                 SceneTwoView(didChooseCorridor: didChooseCorridor)
             }

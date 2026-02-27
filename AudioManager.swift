@@ -6,7 +6,7 @@
 //
 import SwiftUI
 import AVFoundation
-//import UIKit
+import UIKit
 // Adding @MainActor ensures all calls to this class happen on the main thread
 @MainActor
 final class AudioManager {
@@ -14,22 +14,20 @@ final class AudioManager {
     static let shared = AudioManager()
     
     private var audioPlayer: AVAudioPlayer?
-
-    func playBackgroundMusic(fileName: String) {
-        // Look into the Asset Catalog for a Data Asset
+    
+    func playBackgroundMusic(fileName: String, loops: Int = -1) { // -1 is infinite, 0 is play once
         guard let asset = NSDataAsset(name: fileName) else {
             print("❌ Could not find \(fileName) in Assets.xcassets")
             return
         }
 
         do {
-            // Initialize player using the data from the asset
             audioPlayer = try AVAudioPlayer(data: asset.data)
-            audioPlayer?.numberOfLoops = -1
+            audioPlayer?.numberOfLoops = loops // Use the variable here!
             audioPlayer?.play()
-            print("✅ Playing \(fileName) from Assets")
+            print(" Playing \(fileName)")
         } catch {
-            print("❌ Playback error: \(error.localizedDescription)")
+            print(" Playback error: \(error.localizedDescription)")
         }
     }
     
