@@ -1,5 +1,5 @@
 import SwiftUI
-
+import AVFoundation
 struct BridgeSceneView: View {
     let didChooseCorridor: Bool
     
@@ -8,8 +8,19 @@ struct BridgeSceneView: View {
     @State private var showNextButton: Bool = false
     @State private var sliderValue: Double = 0.0
     
+    private func triggerHaptic(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.impactOccurred()
+    }
+
+    private func triggerSuccessHaptic() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+    @State private var shakeOffset: CGFloat = 0 // Controls the screen rumble
     // --- DRAG STATES ---
     @State private var isDragging: Bool = false
+    //@State private var dragOffset: CGSize = CGSize(width: 455, height: 385)
     // Initial position starts at the Dock (Right Side)
     @State private var dragOffset: CGSize = CGSize(width: 455, height: 385)
     
@@ -19,98 +30,94 @@ struct BridgeSceneView: View {
     let biptyaColor = Color(red: 181/255, green: 103/255, blue: 13/255)
     
     var body: some View {
-        ZStack {
-            // --- BACKGROUND LOGIC ---
-            backgroundLayer
-            
-            // --- EXCAVATOR LOGIC (For Road Path) ---
-            if !didChooseCorridor {
-                excavatorLayer
+            // Wrap everything in a Black ZStack to stop the white flashes
+            ZStack {
+                Color.black.ignoresSafeArea() // This covers the "white" gaps during shakes
+                
+                // --- THE SHAKING CONTENT ---
+                Group {
+                    backgroundLayer
+                    
+                    if !didChooseCorridor {
+                        excavatorLayer
+                    }
+                }
+                .offset(x: shakeOffset) // Apply shake to the group
+                
+                // --- UI LAYER (Doesn't shake) ---
+                VStack {
+                    instructionBox
+                    if !didChooseCorridor && sliderValue >= 100 { completionMessage }
+                    Spacer()
+                    if !didChooseCorridor && !showNextButton { constructionSlider }
+                    if showNextButton { continueButton }
+                }
+                
+                if didChooseCorridor { corridorDragLogic }
             }
-            
-            // --- UI OVERLAYS ---
-            VStack {
-                instructionBox
+            .onAppear {
+                setupAudioSession()
                 
-                if !didChooseCorridor && sliderValue >= 100 {
-                    completionMessage
-                }
+                // Check if the bundle can see ANY files
+                let path = Bundle.main.path(forResource: "ConstructionSound", ofType: "mp3")
+                print("DEBUG: Audio path is \(path ?? "NOT FOUND")")
                 
-                Spacer()
-                
-                if !didChooseCorridor && !showNextButton {
-                    constructionSlider
-                }
-                
-                if showNextButton {
-                    continueButton
-                }
-            }
-            
-            // --- BRIDGE DRAG & DROP (For Corridor Path) ---
-            if didChooseCorridor {
-                corridorDragLogic
+                AudioManager.shared.playBackgroundMusic(fileName: "ConstructionSound")
+            }            .navigationBarBackButtonHidden(true)
+            .navigationDestination(isPresented: $goToSceneTwo) {
+                SceneTwoView(didChooseCorridor: didChooseCorridor)
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .navigationDestination(isPresented: $goToSceneTwo) {
-            // Pass the choice to the next scene
-            SceneTwoView(didChooseCorridor: didChooseCorridor)
-        }
-    }
     
     // MARK: - Components
     
     private var backgroundLayer: some View {
-        Group {
-            if didChooseCorridor {
-                // Background for Corridor Path
-                Image(isPlaced ? "Scene1Base" : "ConstructionSpedUpBG")
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-                    .opacity(isPlaced ? 1.0 : 0.6)
-            } else {
-                // Background for Road Path (Fixed to fill screen)
-                GeometryReader { geo in
-                    ZStack {
-                        Image("Road_Phase1")
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: geo.size.width, height: geo.size.height)
-                            .clipped()
-                        
-                        Image("Road_Phase2")
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: geo.size.width, height: geo.size.height)
-                            .clipped()
-                            .opacity(max(0, min(1, (sliderValue - 20) / 40)))
-                        
-                        Image("Road_Phase3")
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: geo.size.width, height: geo.size.height)
-                            .clipped()
-                            .opacity(max(0, min(1, (sliderValue - 60) / 40)))
+            Group {
+                if didChooseCorridor {
+                    Image(isPlaced ? "Scene1Base" : "ConstructionSpedUpBG")
+                        .resizable()
+                        .scaledToFill()
+                        .ignoresSafeArea()
+                        .opacity(isPlaced ? 1.0 : 0.6)
+                } else {
+                    GeometryReader { geo in
+                        ZStack {
+                            Image("Road_Phase1")
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: geo.size.width, height: geo.size.height)
+                                .clipped()
+                            
+                            Image("Road_Phase2")
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: geo.size.width, height: geo.size.height)
+                                .clipped()
+                                .opacity(max(0, min(1, (sliderValue - 20) / 40)))
+                            
+                            Image("Road_Phase3")
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: geo.size.width, height: geo.size.height)
+                                .clipped()
+                                .opacity(max(0, min(1, (sliderValue - 60) / 40)))
+                        }
                     }
+                    .ignoresSafeArea()
                 }
-                .ignoresSafeArea()
             }
         }
-    }
-    
     private var excavatorLayer: some View {
-        Image("excavator")
-            .resizable()
-            .scaledToFit()
-            .frame(width: 600)
-            .offset(
-                x: CGFloat(sin(sliderValue * 0.5) * 10),
-                y: -150 + (CGFloat(sliderValue) * 2) + CGFloat(cos(sliderValue * 0.8) * 15)
-            )
-            .animation(.interactiveSpring(), value: sliderValue)
-    }
+            Image("excavator")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 600)
+                .offset(
+                    x: CGFloat(sin(sliderValue * 0.5) * 10),
+                    y: -150 + (CGFloat(sliderValue) * 2) + CGFloat(cos(sliderValue * 0.8) * 15)
+                )
+                .animation(.interactiveSpring(), value: sliderValue)
+        }
     
     private var instructionBox: some View {
         Text(didChooseCorridor ?
@@ -124,20 +131,35 @@ struct BridgeSceneView: View {
             .cornerRadius(8)
             .padding(.top, 50)
     }
-    
-    private var constructionSlider: some View {
-        VStack {
-            Slider(value: $sliderValue, in: 0...100, step: 0.5)
-                .accentColor(biptyaColor)
-                .frame(width: 500)
-                .onChange(of: sliderValue) { newValue in
-                    if newValue >= 100 { withAnimation { showNextButton = true } }
-                }
-            Text("\(Int(sliderValue))% COMPLETE").foregroundColor(.white).bold()
+    private func triggerVisualShake() {
+            // Increased intensity slightly for iPad
+            withAnimation(.interactiveSpring(response: 0.1, dampingFraction: 0.15)) {
+                shakeOffset = 8
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                shakeOffset = 0
+            }
         }
-        .padding(.bottom, 100)
-    }
-    
+
+    private var constructionSlider: some View {
+            VStack {
+                Slider(value: $sliderValue, in: 0...100, step: 0.5)
+                    .accentColor(biptyaColor)
+                    .frame(width: 500)
+                    .onChange(of: sliderValue) { newValue in
+                        // Shake the screen every time the percentage increases by a whole number
+                        if Int(newValue) % 5 == 0 {
+                            triggerVisualShake()
+                        }
+                        
+                        if newValue >= 100 {
+                            withAnimation { showNextButton = true }
+                        }
+                    }
+                Text("\(Int(sliderValue))% COMPLETE").foregroundColor(.white).bold()
+            }
+            .padding(.bottom, 100)
+        }
     private var continueButton: some View {
         Button(action: { goToSceneTwo = true }) {
             Text("CONTINUE JOURNEY")
@@ -159,7 +181,12 @@ struct BridgeSceneView: View {
     }
 
     // MARK: - Drag & Drop Logic
-    
+    private func setupAudioSession() {
+           
+            let session = AVAudioSession.sharedInstance()
+            try? session.setCategory(.playback, mode: .default, options: [])
+            try? session.setActive(true)
+        }
     private var corridorDragLogic: some View {
         ZStack {
             // 1. THE DOCK (Source Box)
@@ -217,6 +244,9 @@ struct BridgeSceneView: View {
         let yDist = abs(dragOffset.height - targetLocation.height)
         
         if xDist < snapTolerance && yDist < snapTolerance {
+            // SUCCESS HAPTIC
+            triggerSuccessHaptic()
+            
             withAnimation(.spring()) {
                 dragOffset = targetLocation
                 isPlaced = true
@@ -225,6 +255,9 @@ struct BridgeSceneView: View {
                 withAnimation { showNextButton = true }
             }
         } else {
+            // ERROR HAPTIC (light bump to show it didn't fit)
+            triggerHaptic(.medium)
+            
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                 dragOffset = CGSize(width: 455, height: 385)
             }

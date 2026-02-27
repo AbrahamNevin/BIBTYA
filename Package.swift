@@ -17,19 +17,16 @@ let package = Package(
             name: "BIBTYA",
             targets: ["AppModule"],
             bundleIdentifier: "Nevin.BIBTYA",
+            teamIdentifier: "RC8GASDNM8",
             displayVersion: "1.0",
             bundleVersion: "1",
             appIcon: .placeholder(icon: .gamepad),
             accentColor: .presetColor(.pink),
             supportedDeviceFamilies: [
-                .pad,
-                .phone
+                .pad
             ],
             supportedInterfaceOrientations: [
-                .portrait,
-                .landscapeRight,
-                .landscapeLeft,
-                .portraitUpsideDown(.when(deviceFamilies: [.pad]))
+                .landscapeRight
             ]
         )
     ],
