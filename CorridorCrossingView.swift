@@ -142,7 +142,7 @@ struct CorridorCrossingView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $goToEnding) {
-            CoexistenceEndingView()
+            CoexistenceEndingView(useLivingCorridorPath: true)
         }
     }
     

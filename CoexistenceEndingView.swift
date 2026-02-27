@@ -15,6 +15,12 @@ struct CrossingData: Identifiable {
 }
 
 struct CoexistenceEndingView: View {
+    // --- CHOICE TRACKING ---
+    // Set this to true if Build Corridor -> Use Corridor was chosen.
+    // Otherwise, Flow2 will be shown.
+    var didBuildAndUseCorridor: Bool = true
+    var useLivingCorridorPath: Bool
+    
     @State private var stage: Int = 0
     @State private var showLine1 = false
     @State private var showLine2 = false
@@ -54,10 +60,10 @@ struct CoexistenceEndingView: View {
                                 .overlay(Color.black.opacity(0.5))
                                 .transition(.opacity)
                         } else if stage == 4 {
-                            // Stage 4: Displays scene5 image fitting the screen perfectly
-                            Image("scene5")
-                                .resizable()
-                                .scaledToFill()
+                            // Stage 4: Switches background based on user choice
+                            Image(useLivingCorridorPath ? "Flow1" : "Flow2")
+                                        .resizable()
+                                        .scaledToFill()
                                 .frame(width: geometry.size.width, height: geometry.size.height)
                                 .clipped()
                                 .ignoresSafeArea()
@@ -66,7 +72,7 @@ struct CoexistenceEndingView: View {
                         }
                     }
                     
-                    // --- OVERLAY CONTENT (Text) ---
+                    // --- OVERLAY CONTENT (Text & Button) ---
                     VStack {
                         if stage == 1 {
                             Spacer()
@@ -89,18 +95,12 @@ struct CoexistenceEndingView: View {
                                 if showLine1 {
                                     Text("“When roads slow down, forests breathe.”")
                                         .italic()
-                                        .transition(.asymmetric(
-                                            insertion: .move(edge: .bottom).combined(with: .opacity),
-                                            removal: .opacity
-                                        ))
+                                        .transition(.move(edge: .bottom).combined(with: .opacity))
                                 }
                                 
                                 if showLine2 {
                                     Text("“Between 2016 and 2020, leopard deaths fell by over 75%.”")
-                                        .transition(.asymmetric(
-                                            insertion: .move(edge: .bottom).combined(with: .opacity),
-                                            removal: .opacity
-                                        ))
+                                        .transition(.move(edge: .bottom).combined(with: .opacity))
                                 }
                                 
                                 if showLine3 {
@@ -108,7 +108,7 @@ struct CoexistenceEndingView: View {
                                         Text("“Coexistence is not an idea. It is infrastructure.”")
                                             .fontWeight(.black)
                                         
-                                        // PLAY AGAIN BUTTON - Navigates to SceneOne
+                                        // PLAY AGAIN BUTTON - Centered on top of Flow1/Flow2
                                         Button(action: {
                                             goToSceneOne = true
                                         }) {
@@ -121,12 +121,10 @@ struct CoexistenceEndingView: View {
                                             .padding(.vertical, 12)
                                             .padding(.horizontal, 24)
                                             .background(Capsule().stroke(Color.white, lineWidth: 2))
+                                            .background(Color.black.opacity(0.4).clipShape(Capsule()))
                                         }
                                     }
-                                    .transition(.asymmetric(
-                                        insertion: .move(edge: .bottom).combined(with: .opacity),
-                                        removal: .opacity
-                                    ))
+                                    .transition(.move(edge: .bottom).combined(with: .opacity))
                                 }
                             }
                             .font(.system(size: 24, weight: .medium, design: .serif))
@@ -167,7 +165,6 @@ struct CoexistenceEndingView: View {
             .onAppear {
                 runEndingSequence()
             }
-            // NAVIGATION TRIGGER
             .navigationDestination(isPresented: $goToSceneOne) {
                 SceneOneView()
             }
@@ -176,14 +173,13 @@ struct CoexistenceEndingView: View {
     }
 
     // --- Helper Components ---
-    
     private func chartContainer<Content: View>(title: String, data: Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
                 .font(.headline)
                 .foregroundColor(.white)
             data
-                .frame(height: 450) // Balanced height for Playgrounds preview
+                .frame(height: 450)
             Text("Data represents trends from the NH44 Wildlife Corridor.")
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.6))
@@ -194,47 +190,34 @@ struct CoexistenceEndingView: View {
 
     private var mortalityChart: some View {
         Chart(mortalityData) { item in
-            LineMark(
-                x: .value("Year", item.year),
-                y: .value("Deaths", item.deaths)
-            )
-            .interpolationMethod(.catmullRom)
-            .foregroundStyle(.orange)
-            .lineStyle(StrokeStyle(lineWidth: 3))
+            LineMark(x: .value("Year", item.year), y: .value("Deaths", item.deaths))
+                .interpolationMethod(.catmullRom)
+                .foregroundStyle(.orange)
+                .lineStyle(StrokeStyle(lineWidth: 3))
             
-            PointMark(
-                x: .value("Year", item.year),
-                y: .value("Deaths", item.deaths)
-            )
-            .annotation(position: .top) {
-                Text("\(item.deaths)").font(.caption2).foregroundColor(.white)
-            }
+            PointMark(x: .value("Year", item.year), y: .value("Deaths", item.deaths))
+                .annotation(position: .top) {
+                    Text("\(item.deaths)").font(.caption2).foregroundColor(.white)
+                }
         }
         .chartXScale(domain: 2011...2021)
     }
 
     private var crossingChart: some View {
         Chart(crossingData) { item in
-            LineMark(
-                x: .value("Year", String(item.year)),
-                y: .value("Crossings", item.crossings)
-            )
-            .interpolationMethod(.catmullRom)
-            .foregroundStyle(Color.green.gradient)
-            .lineStyle(StrokeStyle(lineWidth: 3))
+            LineMark(x: .value("Year", String(item.year)), y: .value("Crossings", item.crossings))
+                .interpolationMethod(.catmullRom)
+                .foregroundStyle(Color.green.gradient)
+                .lineStyle(StrokeStyle(lineWidth: 3))
 
-            PointMark(
-                x: .value("Year", String(item.year)),
-                y: .value("Crossings", item.crossings)
-            )
-            .annotation(position: .top) {
-                Text("\(item.crossings)").font(.caption2).foregroundColor(.white)
-            }
+            PointMark(x: .value("Year", String(item.year)), y: .value("Crossings", item.crossings))
+                .annotation(position: .top) {
+                    Text("\(item.crossings)").font(.caption2).foregroundColor(.white)
+                }
         }
     }
 
     func runEndingSequence() {
-        // Timeline logic
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
             withAnimation(.easeInOut(duration: 1.5)) { stage = 1 }
         }
@@ -246,7 +229,6 @@ struct CoexistenceEndingView: View {
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 19.0) {
             withAnimation(.easeInOut) { stage = 4 }
-            
             withAnimation(.easeInOut(duration: 1.0).delay(0.5)) { showLine1 = true }
             withAnimation(.easeInOut(duration: 1.0).delay(2.5)) { showLine2 = true }
             withAnimation(.easeInOut(duration: 1.0).delay(4.5)) { showLine3 = true }

@@ -103,7 +103,7 @@ struct SceneTwoView: View {
         
         // NEW: Destination for Escalation Ending
         .navigationDestination(isPresented: $goToEscalation) {
-            EscalationEndingView()
+            EscalationEndingView(didSpeedUpConstruction: !didChooseCorridor)
         }
         
         .onAppear {
@@ -137,6 +137,8 @@ struct SceneTwoView: View {
                     // NEW: Listener for Escalation (Failure/Ignore Path)
                     .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("GoToEscalationEnding"))) { _ in
                         print("SwiftUI Received: Transition to Escalation Ending")
+                        // We don't need to change didChooseCorridor here,
+                        // it was already set when this view was loaded.
                         self.goToEscalation = true
                     }
             }

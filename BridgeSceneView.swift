@@ -54,6 +54,7 @@ struct BridgeSceneView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $goToSceneTwo) {
+            // Pass the choice to the next scene
             SceneTwoView(didChooseCorridor: didChooseCorridor)
         }
     }

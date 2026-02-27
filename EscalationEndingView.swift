@@ -1,10 +1,3 @@
-//
-//  EscalationEndingView.swift
-//  BIBTYA
-//
-//  Created by Nevin Abraham on 26/02/26.
-//
-
 import SwiftUI
 import Charts
 
@@ -13,7 +6,11 @@ struct FatalityData: Identifiable {
 }
 
 struct EscalationEndingView: View {
+    // This value is passed from the previous view
+    let didSpeedUpConstruction: Bool
+    
     @State private var stage: Int = 0
+    @State private var goToSceneOne = false
     
     let fatalityData: [FatalityData] = [
         .init(year: "Year 0", incidents: 61), .init(year: "Year 1", incidents: 40),
@@ -25,62 +22,96 @@ struct EscalationEndingView: View {
         ZStack {
             Color.black.ignoresSafeArea()
             
+            // --- STAGES 1-5: The Story ---
             if stage >= 1 && stage <= 5 {
                 storySceneContent
             }
 
-            // --- STAGE 6: Graph with 40% Opacity & Line Chart ---
-                        if stage == 6 {
-                            VStack(spacing: 20) {
-                                Spacer()
-                                
-                                VStack(alignment: .leading, spacing: 15) {
-                                    Text("“Wildlife Deaths After Corridor Installation”")
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-                                    
-                                    Chart(fatalityData) { item in
-                                        // The Trend Line
-                                        LineMark(
-                                            x: .value("Year", item.year),
-                                            y: .value("Incidents", item.incidents)
-                                        )
-                                        .interpolationMethod(.catmullRom) // Smooth curves
-                                        .foregroundStyle(.orange)
-                                        .lineStyle(StrokeStyle(lineWidth: 4))
+            // --- STAGE 6: The Graph ---
+            if stage == 6 {
+                VStack(spacing: 20) {
+                    Spacer()
+                    VStack(alignment: .leading, spacing: 15) {
+                        Text("“Wildlife Deaths After Corridor Installation”")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                        
+                        Chart(fatalityData) { item in
+                            LineMark(
+                                x: .value("Year", item.year),
+                                y: .value("Incidents", item.incidents)
+                            )
+                            .interpolationMethod(.catmullRom)
+                            .foregroundStyle(.orange)
+                            .lineStyle(StrokeStyle(lineWidth: 4))
 
-                                        // Points on the line
-                                        PointMark(
-                                            x: .value("Year", item.year),
-                                            y: .value("Incidents", item.incidents)
-                                        )
-                                        .foregroundStyle(item.year == "Year 0" ? .red : .orange)
-                                    }
-                                    .frame(height: 300)
-                                }
-                                .padding()
-                                // Set to 0.4 (40%) opacity
-                                .background(Color.black.opacity(0.4).cornerRadius(15))
-                                
-                                Text("“Design changes outcomes.”")
-                                    .font(.title3.bold())
-                                    .foregroundColor(.orange)
-                                
-                                Spacer()
-                            }
-                            .padding()
-                            // Consistent "Rise from bottom" animation
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .bottom).combined(with: .opacity),
-                                removal: .opacity
-                            ))
+                            PointMark(
+                                x: .value("Year", item.year),
+                                y: .value("Incidents", item.incidents)
+                            )
+                            .foregroundStyle(item.year == "Year 0" ? .red : .orange)
                         }
-
-                        if stage == 0 { titleCard(text: "ACT 3: THE BREAKING POINT") }
-                        if stage == 7 { titleCard(text: "He wasn’t in the way.\nWe were.").foregroundColor(.red) }
+                        .frame(height: 300)
                     }
-                    .onAppear { runEscalationSequence() }
+                    .padding()
+                    .background(Color.black.opacity(0.4).cornerRadius(15))
+                    
+                    Text("“Design changes outcomes.”")
+                        .font(.title3.bold())
+                        .foregroundColor(.orange)
+                    
+                    Spacer()
                 }
+                .padding()
+                .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
+            }
+
+            // --- STAGE 0: Opening Title ---
+            if stage == 0 { titleCard(text: "ACT 3: THE BREAKING POINT") }
+            
+            // --- STAGE 7: Final Scene (Persists) ---
+            if stage >= 7 {
+                ZStack {
+                    // Logic: Choice determines the background image
+                    Image(didSpeedUpConstruction ? "Flow3" : "Flow4")
+                                            .resizable()
+                                            .scaledToFill()
+                                            .ignoresSafeArea()
+                                            .overlay(Color.black.opacity(0.5))
+                    
+                    VStack(spacing: 40) {
+                        Text("He wasn’t in the way.\nWe were.")
+                            .font(.system(size: 40, weight: .bold, design: .serif))
+                            .multilineTextAlignment(.center)
+                            .foregroundColor(.white)
+                            .padding()
+                        
+                        Button(action: {
+                            goToSceneOne = true
+                        }) {
+                            HStack {
+                                Image(systemName: "arrow.counterclockwise")
+                                Text("Play Again")
+                            }
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 24)
+                            .background(Capsule().stroke(Color.white, lineWidth: 2))
+                            .background(Color.black.opacity(0.3).clipShape(Capsule()))
+                        }
+                    }
+                }
+                .transition(.opacity)
+            }
+        }
+        .onAppear { runEscalationSequence() }
+        .navigationDestination(isPresented: $goToSceneOne) {
+            SceneOneView()
+        }
+        .navigationBarBackButtonHidden(true)
+    }
+
     @ViewBuilder
     var storySceneContent: some View {
         switch stage {
@@ -101,14 +132,23 @@ struct EscalationEndingView: View {
     }
 
     func titleCard(text: String) -> some View {
-        ZStack { Color.black.ignoresSafeArea(); Text(text).font(.largeTitle.bold()).multilineTextAlignment(.center).foregroundColor(.white).padding() }.transition(.opacity)
+        ZStack {
+            Color.black.ignoresSafeArea()
+            Text(text)
+                .font(.largeTitle.bold())
+                .multilineTextAlignment(.center)
+                .foregroundColor(.white)
+                .padding()
+        }.transition(.opacity)
     }
 
     func runEscalationSequence() {
-        let timings: [Double] = [3, 7, 11, 15, 19, 23, 27, 33]
+        let timings: [Double] = [3, 7, 11, 15, 19, 23, 27] // 7 Stages
         for i in 0..<timings.count {
             DispatchQueue.main.asyncAfter(deadline: .now() + timings[i]) {
-                withAnimation(.easeInOut(duration: 1.5)) { stage = i + 1 }
+                withAnimation(.easeInOut(duration: 1.5)) {
+                    stage = i + 1
+                }
             }
         }
     }

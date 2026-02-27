@@ -129,7 +129,7 @@ struct FencePlacementView: View {
         .navigationBarBackButtonHidden(true)
         // --- THIS PART HANDLES THE NAVIGATION ---
         .navigationDestination(isPresented: $goToNextScene) {
-            CoexistenceEndingView()
+            CoexistenceEndingView(useLivingCorridorPath: false)
         }
     }
 
