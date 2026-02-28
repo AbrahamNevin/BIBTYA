@@ -73,7 +73,6 @@ struct BridgeSceneView: View {
             }
         }
     
-    // MARK: - Components
     
     private var backgroundLayer: some View {
             Group {
@@ -191,7 +190,7 @@ struct BridgeSceneView: View {
             try? session.setActive(true)
         }
 
-    // MARK: - Drag & Drop Logic
+   
         private var corridorDragLogic: some View {
             ZStack {
                 // 1. THE DOCK (Source Box) - Instant disappearance

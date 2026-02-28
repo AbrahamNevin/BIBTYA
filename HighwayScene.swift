@@ -40,7 +40,7 @@ class HighwayScene: SKScene, SKPhysicsContactDelegate {
         createButtons()
     }
     
-    // MARK: - TRAFFIC
+    
     func setupTraffic() {
         let lanes = [frame.midY + 170, frame.midY - 10]
         let carWidth: CGFloat = 800
@@ -69,7 +69,7 @@ class HighwayScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
-    // MARK: - MOVEMENT LOGIC
+   
     func moveBiptya(direction: String) {
         if isMoving { return }
         var newPosition = biptya.position
@@ -111,7 +111,6 @@ class HighwayScene: SKScene, SKPhysicsContactDelegate {
         currentView.presentScene(nextScene, transition: SKTransition.crossFade(withDuration: 0.6))
     }
 
-    // MARK: - UPDATED UI BUTTONS
     func createButtons() {
         let btnSize = CGSize(width: 120, height: 80) // Slightly wider for the text
         
