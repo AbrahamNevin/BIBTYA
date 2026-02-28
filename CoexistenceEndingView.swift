@@ -22,8 +22,11 @@ struct CoexistenceEndingView: View {
     @State private var showLine1 = false
     @State private var showLine2 = false
     @State private var showFinalVStack = false
-    @State private var overlayOpacity: Double = 0.0 // Starts at 0 for the 10-second "clear" view
+    @State private var overlayOpacity: Double = 0.0
     @State private var goToSceneOne = false
+    
+    // Custom Brand Color
+    let biptyaOrange = Color(red: 255/255, green: 149/255, blue: 0/255)
     
     let mortalityData: [LeopardData] = [
         .init(year: 2012, deaths: 14), .init(year: 2013, deaths: 16),
@@ -64,7 +67,6 @@ struct CoexistenceEndingView: View {
                                 .frame(width: geometry.size.width, height: geometry.size.height)
                                 .clipped()
                                 .ignoresSafeArea()
-                                // The overlay that darkens the image for text readability
                                 .overlay(Color.black.opacity(overlayOpacity))
                                 .transition(.opacity)
                         }
@@ -103,17 +105,9 @@ struct CoexistenceEndingView: View {
                                         Text("“Coexistence is not an idea. It is infrastructure.”")
                                             .fontWeight(.black)
                                         
+                                        // UPDATED: Standardized Button Style
                                         Button(action: { goToSceneOne = true }) {
-                                            HStack {
-                                                Image(systemName: "arrow.counterclockwise")
-                                                Text("Play Again")
-                                            }
-                                            .font(.system(size: 18, weight: .bold))
-                                            .foregroundColor(.white)
-                                            .padding(.vertical, 12)
-                                            .padding(.horizontal, 24)
-                                            .background(Capsule().stroke(Color.white, lineWidth: 2))
-                                            .background(Color.black.opacity(0.4).clipShape(Capsule()))
+                                            choiceButton(text: "PLAY AGAIN", color: biptyaOrange)
                                         }
                                     }
                                     .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -163,6 +157,20 @@ struct CoexistenceEndingView: View {
         }
     }
 
+    // Standardized Button ViewBuilder
+    func choiceButton(text: String, color: Color) -> some View {
+        Text(text)
+            .font(.system(size: 18, weight: .bold))
+            .foregroundColor(.white)
+            .frame(width: 280, height: 70)
+            .background(Color.black.opacity(0.8))
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(color, lineWidth: 2)
+            )
+    }
+
     private func chartContainer<Content: View>(title: String, data: Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title).font(.headline).foregroundColor(.white)
@@ -196,21 +204,16 @@ struct CoexistenceEndingView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 8.0) { withAnimation { stage = 2 } }
         DispatchQueue.main.asyncAfter(deadline: .now() + 13.5) { withAnimation { stage = 3 } }
         
-        // --- STAGE 4 BEGINS ---
         DispatchQueue.main.asyncAfter(deadline: .now() + 19.0) {
             withAnimation(.easeInOut(duration: 1.0)) {
                 stage = 4
-                overlayOpacity = 0.0 // Image is shown clearly with NO overlay
+                overlayOpacity = 0.0
             }
             
-            // WAIT 10 SECONDS BEFORE STARTING TEXT
             DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
-                // 1. Start darkening the background
                 withAnimation(.easeInOut(duration: 2.0)) {
                     overlayOpacity = 0.6
                 }
-                
-                // 2. Cascade the text lines
                 withAnimation(.easeInOut(duration: 1.0).delay(0.5)) { showLine1 = true }
                 withAnimation(.easeInOut(duration: 1.0).delay(2.5)) { showLine2 = true }
                 withAnimation(.easeInOut(duration: 1.0).delay(4.5)) { showFinalVStack = true }

@@ -15,6 +15,9 @@ struct EscalationEndingView: View {
     @State private var showFinalText = false
     @State private var finalOverlayOpacity: Double = 0.0
     
+    // Brand Color
+    let biptyaOrange = Color(red: 255/255, green: 149/255, blue: 0/255)
+    
     let fatalityData: [FatalityData] = [
         .init(year: "Year 0", incidents: 61), .init(year: "Year 1", incidents: 40),
         .init(year: "Year 2", incidents: 22), .init(year: "Year 3", incidents: 14),
@@ -74,12 +77,11 @@ struct EscalationEndingView: View {
                     // --- STAGE 7: Final Scene ---
                     if stage >= 7 {
                         ZStack {
-                            // Background Image: Adjusted to fill without heavy cropping/zooming
                             Image(didSpeedUpConstruction ? "Flow3" : "Flow4")
                                 .resizable()
-                                .scaledToFill() // Fills the screen
+                                .scaledToFill()
                                 .frame(width: geometry.size.width, height: geometry.size.height)
-                                .clipped() // Prevents the image from bleeding out of bounds
+                                .clipped()
                                 .ignoresSafeArea()
                                 .overlay(Color.black.opacity(finalOverlayOpacity))
                             
@@ -89,22 +91,12 @@ struct EscalationEndingView: View {
                                         .font(.system(size: 40, weight: .bold, design: .serif))
                                         .multilineTextAlignment(.center)
                                         .foregroundColor(.white)
-                                        .shadow(radius: 10) // Helps readability
+                                        .shadow(radius: 10)
                                         .padding()
                                     
-                                    Button(action: {
-                                        goToSceneOne = true
-                                    }) {
-                                        HStack {
-                                            Image(systemName: "arrow.counterclockwise")
-                                            Text("Play Again")
-                                        }
-                                        .font(.system(size: 18, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .padding(.vertical, 12)
-                                        .padding(.horizontal, 24)
-                                        .background(Capsule().stroke(Color.white, lineWidth: 2))
-                                        .background(Color.black.opacity(0.3).clipShape(Capsule()))
+                                    // UPDATED: Standardized Button Style
+                                    Button(action: { goToSceneOne = true }) {
+                                        choiceButton(text: "PLAY AGAIN", color: biptyaOrange)
                                     }
                                 }
                                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -126,6 +118,21 @@ struct EscalationEndingView: View {
             }
             .navigationBarBackButtonHidden(true)
         }
+    }
+
+    // Standardized Button ViewBuilder
+    @ViewBuilder
+    func choiceButton(text: String, color: Color) -> some View {
+        Text(text)
+            .font(.system(size: 18, weight: .bold))
+            .foregroundColor(.white)
+            .frame(width: 280, height: 70)
+            .background(Color.black.opacity(0.8))
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(color, lineWidth: 2)
+            )
     }
 
     // MARK: - Subviews
@@ -186,7 +193,6 @@ struct EscalationEndingView: View {
                     stage = i + 1
                 }
                 
-                // When we hit the last stage, start the 10-second "clean image" timer
                 if stage == 7 {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
                         withAnimation(.easeInOut(duration: 2.0)) {
