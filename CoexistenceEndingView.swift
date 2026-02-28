@@ -174,7 +174,7 @@ struct CoexistenceEndingView: View {
     private func chartContainer<Content: View>(title: String, data: Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title).font(.headline).foregroundColor(.white)
-            data.frame(height: 450)
+            data.frame(height: 600)
             Text("Data represents trends from the NH44 Wildlife Corridor.")
                 .font(.caption).foregroundColor(.white.opacity(0.6))
         }

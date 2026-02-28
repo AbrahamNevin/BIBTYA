@@ -59,7 +59,7 @@ struct EscalationEndingView: View {
                                     )
                                     .foregroundStyle(item.year == "Year 0" ? .red : .orange)
                                 }
-                                .frame(height: 300)
+                                .frame(height: 500)
                             }
                             .padding()
                             .background(Color.black.opacity(0.4).cornerRadius(15))

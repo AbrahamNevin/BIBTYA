@@ -184,7 +184,6 @@ struct BridgeSceneView: View {
             .padding().background(Color.black.opacity(0.4)).cornerRadius(10)
     }
 
-    // MARK: - Drag & Drop Logic
     private func setupAudioSession() {
            
             let session = AVAudioSession.sharedInstance()

@@ -148,11 +148,12 @@ class HighwayScene: SKScene, SKPhysicsContactDelegate {
     
     private func getArrowIcon(for name: String) -> String {
         switch name {
-        case "up": return "▲"
-        case "down": return "▼"
-        case "left": return "◀"
-        case "right": return "▶"
-        default: return ""
+                case "up": return "▲"
+                case "down": return "▼"
+                // Adding \u{FE0E} forces the OS to render these as text, not emojis
+                case "left": return "◀\u{FE0E}"
+                case "right": return "▶\u{FE0E}"
+                default: return ""
         }
     }
 
