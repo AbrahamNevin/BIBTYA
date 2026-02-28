@@ -191,80 +191,87 @@ struct BridgeSceneView: View {
             try? session.setCategory(.playback, mode: .default, options: [])
             try? session.setActive(true)
         }
-    private var corridorDragLogic: some View {
-        ZStack {
-            // 1. THE DOCK (Source Box)
-            RoundedRectangle(cornerRadius: 15)
-                .stroke(Color.orange, lineWidth: 3)
-                .background(RoundedRectangle(cornerRadius: 15).fill(Color.black.opacity(0.4)))
-                .frame(width: 180, height: 120)
-                .position(x: UIScreen.main.bounds.width - 120, y: (UIScreen.main.bounds.height / 2) + 350)
-                .overlay(
-                    Text("BRIDGE DOCK")
-                        .font(.caption.bold())
-                        .foregroundColor(.orange)
-                        .position(x: UIScreen.main.bounds.width - 120, y: (UIScreen.main.bounds.height / 2) + 275)
-                )
 
-            // 2. THE GHOST TARGET
-            if !isPlaced {
+    // MARK: - Drag & Drop Logic
+        private var corridorDragLogic: some View {
+            ZStack {
+                // 1. THE DOCK (Source Box) - Instant disappearance
+                if !isPlaced {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 15)
+                            .stroke(Color.orange, lineWidth: 3)
+                            .background(RoundedRectangle(cornerRadius: 15).fill(Color.black.opacity(0.4)))
+                            .frame(width: 180, height: 120)
+                        
+                        Text("BRIDGE DOCK")
+                            .font(.caption.bold())
+                            .foregroundColor(.orange)
+                            .offset(y: -75)
+                    }
+                    .position(x: UIScreen.main.bounds.width - 120, y: (UIScreen.main.bounds.height / 2) + 350)
+                    // Removed .transition here for instant removal
+                }
+
+                // 2. THE GHOST TARGET
+                if !isPlaced {
+                    Image("bridge")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 1200)
+                        .opacity(0.2)
+                        .offset(targetLocation)
+                }
+
+                // 3. THE ACTUAL BRIDGE
                 Image("bridge")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 1200)
-                    .opacity(0.2)
-                    .offset(targetLocation)
-            }
-
-            // 3. THE ACTUAL BRIDGE
-            Image("bridge")
-                .resizable()
-                .scaledToFit()
-                .frame(width: (isDragging || isPlaced) ? 1200 : 150)
-                .shadow(color: .black.opacity(isPlaced ? 0 : 0.6), radius: 10)
-                .offset(dragOffset)
-                .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isDragging)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            if !isPlaced {
-                                isDragging = true
-                                self.dragOffset = CGSize(
-                                    width: -455 + value.translation.width,
-                                    height: 385 + value.translation.height
-                                )
+                    .frame(width: (isDragging || isPlaced) ? 1200 : 150)
+                    .shadow(color: .black.opacity(isPlaced ? 0 : 0.6), radius: 10)
+                    .offset(dragOffset)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isDragging)
+                    .gesture(
+                        DragGesture()
+                            .onChanged { value in
+                                if !isPlaced {
+                                    isDragging = true
+                                    self.dragOffset = CGSize(
+                                        width: 455 + value.translation.width,
+                                        height: 385 + value.translation.height
+                                    )
+                                }
                             }
-                        }
-                        .onEnded { _ in
-                            isDragging = false
-                            checkPlacement()
-                        }
-                )
+                            .onEnded { _ in
+                                isDragging = false
+                                checkPlacement()
+                            }
+                    )
+            }
         }
-    }
-    
-    private func checkPlacement() {
-        let xDist = abs(dragOffset.width - targetLocation.width)
-        let yDist = abs(dragOffset.height - targetLocation.height)
         
-        if xDist < snapTolerance && yDist < snapTolerance {
-            // SUCCESS HAPTIC
-            triggerSuccessHaptic()
+        private func checkPlacement() {
+            let xDist = abs(dragOffset.width - targetLocation.width)
+            let yDist = abs(dragOffset.height - targetLocation.height)
             
-            withAnimation(.spring()) {
-                dragOffset = targetLocation
+            if xDist < snapTolerance && yDist < snapTolerance {
+                triggerSuccessHaptic()
+                
+                // Set this first without animation so the Dock disappears instantly
                 isPlaced = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                withAnimation { showNextButton = true }
-            }
-        } else {
-            // ERROR HAPTIC (light bump to show it didn't fit)
-            triggerHaptic(.medium)
-            
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                dragOffset = CGSize(width: 455, height: 385)
+                
+                // Animate only the bridge snapping into place
+                withAnimation(.spring()) {
+                    dragOffset = targetLocation
+                }
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    withAnimation { showNextButton = true }
+                }
+            } else {
+                triggerHaptic(.medium)
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                    dragOffset = CGSize(width: 455, height: 385)
+                }
             }
         }
-    }
 }

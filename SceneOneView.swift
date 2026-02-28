@@ -89,6 +89,7 @@ struct SceneOneView: View {
                     }
                 }
             }
+            .navigationBarBackButtonHidden(true)
             .navigationDestination(isPresented: $goToNextScene) {
                 // Ensure this matches the parameter name in SceneTwoView
                 BridgeSceneView(didChooseCorridor: builtBridge)
@@ -99,7 +100,7 @@ struct SceneOneView: View {
     private func getLineText(_ index: Int) -> String {
         let lines = [
             "Highways are rising across rural Maharashtra, cutting through endless sugarcane fields where Biptyas silently move at dusk.",
-            "Construction promises progress — but it also fragments their hidden pathways, pushing them closer to human settlements.",
+            "Construction promises progress, but it also fragments their hidden pathways, pushing them closer to human settlements.",
             "Dust settles. Machines pause. A leopard watches from the cane.",
             "Will you build for speed… or for coexistence?"
         ]

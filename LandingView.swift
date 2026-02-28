@@ -66,6 +66,7 @@ struct LandingView: View {
                     .padding(.bottom, 210)
                 }
             }
+            .navigationBarBackButtonHidden(true)
             .navigationDestination(isPresented: $showInfo) {
                 InfoView()
             }
